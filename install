@@ -35,13 +35,14 @@ else
   exit 1
 fi
 
-useradd -r -s $(which nologin) $SERVICE_NAME
+groupadd -r $SERVICE_NAME
+useradd -r -s $(which nologin) -g $SERVICE_NAME $SERVICE_NAME
 chown -R $SERVICE_NAME:$SERVICE_NAME $SCRIPT_DIR
 chmod -R 755 $SCRIPT_DIR/data
 
 cat <<EOF > /etc/systemd/system/$SERVICE_NAME.service
 [Unit]
-Description=Container Application Service
+Description=$SERVICE_NAME
 Requires=${CONTAINER_CMD}.service
 After=${CONTAINER_CMD}.service
 
