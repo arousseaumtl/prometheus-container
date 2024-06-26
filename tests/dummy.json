@@ -1,0 +1,17 @@
+[
+    {
+      "labels": {
+        "alertname": "URLDown",
+        "severity": "critical",
+        "url": "http://test.test:80"
+      },
+      "annotations": {
+        "summary": "URL down",
+        "description": "The URL http://test.test:80 has not responded for more than 1 hour."
+      },
+      "startsAt": "2028-06-13T16:04:25.779Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://localhost:9090"
+    }
+  ]
+  

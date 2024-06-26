@@ -1,0 +1,69 @@
+#!/bin/bash
+
+SERVICE_NAME="prometheus-container"
+SCRIPT_DIR="$(pwd)"
+
+if [ "$EUID" -ne 0 ]
+then 
+  echo -e '\n\nPlease run install script as root.\n\n'
+  exit 1
+fi
+
+if command -v docker &> /dev/null
+then
+  CONTAINER_CMD="docker"
+  if docker compose version &> /dev/null
+  then
+    COMPOSE_CMD="docker compose"
+  elif command -v docker-compose &> /dev/null; then
+    COMPOSE_CMD="docker-compose"
+  else
+    echo -e '\n\nDocker is installed but neither "docker compose" nor "docker-compose" is available. Please install Docker Compose, or upgrade to latest version of Docker.\n\n'
+    exit 1
+  fi
+elif command -v podman &> /dev/null
+then
+  CONTAINER_CMD="podman"
+  if command -v podman-compose &> /dev/null; then
+    COMPOSE_CMD="podman-compose"
+  else
+    echo -e '\n\nPodman is installed but podman-compose is not installed. Please install podman-compose.\n\n'
+    exit 1
+  fi
+else
+  echo -e '\n\nNo supported container runtime found. Please install Docker, Podman, or containerd.\n\n'
+  exit 1
+fi
+
+useradd -r -s $(which nologin) $SERVICE_NAME
+chown -R $SERVICE_NAME:$SERVICE_NAME $SCRIPT_DIR
+chmod -R 755 $SCRIPT_DIR/data
+
+cat <<EOF > /etc/systemd/system/$SERVICE_NAME.service
+[Unit]
+Description=Container Application Service
+Requires=${CONTAINER_CMD}.service
+After=${CONTAINER_CMD}.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=$SCRIPT_DIR
+User=$SERVICE_NAME
+Group=$SERVICE_NAME
+ExecStart=${COMPOSE_CMD} -f $SCRIPT_DIR/docker-compose.yml up -d
+ExecStop=${COMPOSE_CMD} -f $SCRIPT_DIR/docker-compose.yml down
+TimeoutStopSec=0
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable $SERVICE_NAME
+
+echo -e '\n\nService '$SERVICE_NAME' has been installed.\n\n'
+echo -e 'To start the service, run:\n\n\tsystemctl start '$SERVICE_NAME'\n\n'
+
+exit 0

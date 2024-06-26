@@ -1,0 +1,87 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    command:
+     - "--web.external-url=http://haproxy:8080/prometheus"
+     - "--web.route-prefix=/"
+     - "--config.file=/etc/prometheus/prometheus.yml"
+     - "--storage.tsdb.retention.time=180d"
+     - "--storage.tsdb.retention.size=50GB"
+     - "--web.enable-lifecycle" 
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/rules.yml:/etc/prometheus/rules.yml
+      - ./data/prometheus:/prometheus:z
+      - ./targets/blackbox_targets.json:/etc/prometheus/blackbox_targets.yml
+    networks:
+      - internal-network
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: always
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    volumes:
+      - ./config/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./template/alertmanager:/etc/alertmanager/template
+      - ./data/alertmanager:/alertmanager:z
+    networks:
+      - internal-network
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox_exporter
+    restart: always
+    networks:
+      - internal-network
+    volumes:
+      - ./config/blackbox.yml:/etc/blackbox_exporter/config.yml
+
+  prometheus-msteams:
+    image: quay.io/prometheusmsteams/prometheus-msteams
+    container_name: prometheus_msteams
+    restart: always
+    volumes:
+      - ./template/prometheus-teams/teams.tmpl:/tmp/teams.tmpl
+    env_file:
+      - ./env/prometheus_msteams.env
+    networks:
+      - internal-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    volumes:
+      - ./data/grafana:/var/lib/grafana:z
+      - ./config/grafana.ini:/etc/grafana/grafana.ini
+      - ./config/grafana_datasource_prometheus.yml:/etc/grafana/provisioning/datasources/datasource.yml:z
+      - ./config/grafana_dashboard_provisioning.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:z
+      - ./config/grafana_dashboard_blackbox.json:/etc/grafana/provisioning/dashboards/blackbox.json:z
+    env_file:
+      - ./env/grafana.env
+    networks:
+      - internal-network
+
+  haproxy:
+    image: haproxy:latest
+    container_name: haproxy
+    restart: always
+    volumes:
+      - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    depends_on:
+      - prometheus
+      - blackbox-exporter
+      - alertmanager
+      - grafana
+    ports:
+      - "8080:80"
+    networks:
+      - internal-network
+
+networks:
+  internal-network:
+    driver: bridge

@@ -1,0 +1,24 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ["alertname"]
+  group_wait: 1m
+  group_interval: 5m
+  receiver: "default"
+
+  routes:
+    - match:
+        alertname: "Watchdog"
+      repeat_interval: 6h
+      receiver: "default"
+
+    - match:
+        alertname: "URLDown"
+      repeat_interval: 1h
+      receiver: "default"
+
+receivers:
+  - name: "default"
+    webhook_configs:
+      - url: "http://prometheus_msteams:2000/alertmanager"

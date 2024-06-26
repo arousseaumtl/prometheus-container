@@ -1,0 +1,23 @@
+{{ define "teams.card" }}
+{
+  "@context": "http://schema.org/extensions",
+  "@type": "MessageCard",
+  "title": "{{ .CommonLabels.alertname }} (x{{ len .Alerts }})",
+  "summary": "{{ range .Alerts }}{{ .Annotations.description }} {{ end }}",
+  "themeColor": "{{ if eq .Status "firing" }}FF0000{{ else }}00FF00{{ end }}",
+  "sections": [
+    {{- range $index, $alert := .Alerts }}
+    {
+      "markdown": true,
+      "facts": [
+        { "name": "Severity", "value": "{{ $alert.Labels.severity }}" }
+        {{- if $alert.Labels.url }},
+        { "name": "URL", "value": "{{ $alert.Labels.url }}" }
+        {{- end }},
+        { "name": "Description", "value": "{{ $alert.Annotations.description }}" }
+      ]
+    }{{- if lt (add $index 1) (len $.Alerts) }},{{ end }}
+    {{- end }}
+  ]
+}
+{{ end }}
