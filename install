@@ -37,6 +37,12 @@ fi
 
 groupadd -r $SERVICE_NAME
 useradd -r -s $(which nologin) -g $SERVICE_NAME $SERVICE_NAME
+
+if [ $CONTAINER_CMD == "docker" || $CONTAINER_CMD == "docker-compose" ]
+then
+  usermod -aG docker $SERVICE_NAME
+fi
+
 chown -R $SERVICE_NAME:$SERVICE_NAME $SCRIPT_DIR
 chmod -R 755 $SCRIPT_DIR/data
 
