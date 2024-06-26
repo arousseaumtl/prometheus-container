@@ -22,8 +22,5 @@ __pycache__/
 Desktop.ini
 *.bak
 secret/*
-data/alertmanager/*
-data/grafana/*
-data/prometheus/*
 targets/*
 !targets/targets.json
