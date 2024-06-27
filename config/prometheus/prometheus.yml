@@ -21,12 +21,12 @@ scrape_configs:
       module: [http_2xx]
     file_sd_configs:
       - files:
-        - /etc/prometheus/blackbox_targets.yml
+        - /etc/prometheus/blackbox_targets.json
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
         target_label: url
       - target_label: __address__
-        replacement: blackbox_exporter
+        replacement: blackbox_exporter:9115
       

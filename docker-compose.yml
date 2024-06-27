@@ -4,19 +4,19 @@ services:
     container_name: prometheus
     restart: always
     command:
-     - "--web.external-url=http://haproxy:8080/prometheus"
-     - "--web.route-prefix=/"
      - "--config.file=/etc/prometheus/prometheus.yml"
      - "--storage.tsdb.retention.time=180d"
      - "--storage.tsdb.retention.size=50GB"
-     - "--web.enable-lifecycle" 
+     - "--web.enable-lifecycle"
     volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./config/rules.yml:/etc/prometheus/rules.yml
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/prometheus/rules.yml:/etc/prometheus/rules.yml
+      - ./config/prometheus/blackbox_targets.json:/etc/prometheus/blackbox_targets.json
       - ./data/prometheus:/prometheus:z
-      - ./targets/blackbox_targets.json:/etc/prometheus/blackbox_targets.yml
+    ports:
+      - "9090:9090"
     networks:
-      - internal-network
+      - internal
 
   alertmanager:
     image: prom/alertmanager:latest
@@ -25,31 +25,37 @@ services:
     command:
       - "--config.file=/etc/alertmanager/alertmanager.yml"
     volumes:
-      - ./config/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
       - ./template/alertmanager:/etc/alertmanager/template
       - ./data/alertmanager:/alertmanager:z
+    ports:
+      - "9093:9093"
     networks:
-      - internal-network
+      - internal
 
-  blackbox-exporter:
+  blackbox_exporter:
     image: prom/blackbox-exporter:latest
     container_name: blackbox_exporter
     restart: always
-    networks:
-      - internal-network
     volumes:
-      - ./config/blackbox.yml:/etc/blackbox_exporter/config.yml
+      - ./config/blackbox_exporter/blackbox.yml:/etc/blackbox_exporter/config.yml
+    depends_on:
+      - prometheus
+    ports:
+      - "9115:9115"
+    networks:
+      - internal
 
-  prometheus-msteams:
+  prometheus_msteams:
     image: quay.io/prometheusmsteams/prometheus-msteams
     container_name: prometheus_msteams
     restart: always
     volumes:
-      - ./template/prometheus-teams/teams.tmpl:/tmp/teams.tmpl
+      - ./template/prometheus_msteams/teams.tmpl:/tmp/teams.tmpl
     env_file:
       - ./env/prometheus_msteams.env
     networks:
-      - internal-network
+      - internal
 
   grafana:
     image: grafana/grafana:latest
@@ -57,31 +63,36 @@ services:
     restart: always
     volumes:
       - ./data/grafana:/var/lib/grafana:z
-      - ./config/grafana.ini:/etc/grafana/grafana.ini
-      - ./config/grafana_datasource_prometheus.yml:/etc/grafana/provisioning/datasources/datasource.yml:z
-      - ./config/grafana_dashboard_provisioning.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:z
-      - ./config/grafana_dashboard_blackbox.json:/etc/grafana/provisioning/dashboards/blackbox.json:z
+      - ./config/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./config/grafana/grafana_datasource_prometheus.yml:/etc/grafana/provisioning/datasources/datasource.yml:z
+      - ./config/grafana/grafana_dashboard_provisioning.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:z
+      - ./config/grafana/grafana_dashboard_blackbox.json:/etc/grafana/provisioning/dashboards/blackbox.json:z
+    depends_on:
+      - prometheus
     env_file:
       - ./env/grafana.env
+    ports:
+      - "3000:3000"
     networks:
-      - internal-network
+      - internal
 
   haproxy:
     image: haproxy:latest
     container_name: haproxy
     restart: always
     volumes:
-      - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ./config/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ./config/haproxy/404.http:/etc/haproxy/errors/404.http
     depends_on:
       - prometheus
-      - blackbox-exporter
+      - blackbox_exporter
       - alertmanager
       - grafana
-    ports:
-      - "8080:80"
     networks:
-      - internal-network
+      - internal
+    ports:
+      - "80:80"
 
 networks:
-  internal-network:
+  internal:
     driver: bridge

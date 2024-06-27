@@ -1,0 +1,91 @@
+HTTP/1.0 404 Not Found
+Cache-Control: no-cache
+Connection: close
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Not Found</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            color: #0f0;
+            font-family: monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            text-align: center;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: block;
+            z-index: -1;
+        }
+        .message {
+            position: relative;
+            z-index: 1;
+        }
+        .message h1 {
+            font-size: 8.4vw;
+            margin: 0;
+        }
+        .message p {
+            font-size: 2.1vw;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <div class="message">
+        <h1>404</h1>
+        <p>Page not found</p>
+    </div>
+    <script>
+        const canvas = document.getElementById('matrix');
+        const context = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const fontSize = 30;
+        const columnSpacing = 60;
+        const columns = Math.floor(canvas.width / (fontSize + columnSpacing));
+        const drops = Array.from({ length: columns }, () => Math.random() * canvas.height / fontSize);
+
+        function drawMatrix() {
+            context.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            context.fillStyle = '#0f0';
+            context.font = `${fontSize}px monospace`;
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = '404';
+                context.fillText(text, i * (fontSize + columnSpacing), drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 50);
+    </script>
+</body>
+</html>
