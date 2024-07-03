@@ -6,18 +6,10 @@
   "summary": "{{ range .Alerts }}{{ .Annotations.description }} {{ end }}",
   "themeColor": "{{ if eq .Status "firing" }}FF0000{{ else }}00FF00{{ end }}",
   "sections": [
-    {{- range $index, $alert := .Alerts }}
     {
       "markdown": true,
-      "facts": [
-        { "name": "Severity", "value": "{{ $alert.Labels.severity }}" }
-        {{- if $alert.Labels.url }},
-        { "name": "URL", "value": "{{ $alert.Labels.url }}" }
-        {{- end }},
-        { "name": "Description", "value": "{{ $alert.Annotations.description }}" }
-      ]
-    }{{- if lt (add $index 1) (len $.Alerts) }},{{ end }}
-    {{- end }}
+      "text": "{{ range $alert := .Alerts }}**Severity:** {{ $alert.Labels.severity }}<br>{{ if $alert.Labels.url }}**URL:** [{{ $alert.Labels.url }}]({{ $alert.Labels.url }})<br>{{ end }}**Description:** {{ $alert.Annotations.description }}<br><br>{{ end }}"
+    }
   ]
 }
 {{ end }}

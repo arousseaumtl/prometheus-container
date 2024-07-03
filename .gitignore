@@ -24,3 +24,4 @@ Desktop.ini
 targets/*
 !targets/targets.json
 *.secret
+data/*
